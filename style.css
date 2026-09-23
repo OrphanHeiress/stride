@@ -178,6 +178,17 @@ body::before {
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); flex-shrink: 0; transition: all 0.25s ease; }
 .dot.moving { background: var(--good); box-shadow: 0 0 10px rgba(53,183,133,0.6); }
 
+/* small live camera preview — iOS will not render frames from a detached
+   <video>, and seeing it also proves the camera is actually working */
+.cam {
+  width: 46px; height: 35px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: #1b1f3a;
+  flex-shrink: 0;
+  transform: scaleX(-1);   /* mirror, so it reads like a mirror */
+}
+
 /* live motion signal — so you can see what the camera is reading */
 .meter {
   margin-left: auto;

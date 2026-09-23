@@ -353,10 +353,11 @@ const Motion = {
   video: null, canvas: null, ctx: null, stream: null, raf: null,
   prevLum: null, moving: false, running: false, failed: false, errorName: '',
   lastSample: 0, lastMotionAt: 0, activeMs: 0, lastRatio: 0, hits: 0,
+  waitingSince: 0, calStart: 0, noFrames: false,
   onState: () => {},
 
   SAMPLE_MS: 120,      // compare across 120ms — 16ms shows almost no change
-  HOLD_MS: 2600,       // stay "moving" this long after the last real movement
+  HOLD_MS: 1800,       // stay "moving" this long after the last real movement
   PIXEL_DELTA: 26,     // luminance change for a pixel to count
   FLOOR: 0.02,         // never treat less than 2% of the frame as movement
   CEILING: 0.45,       // allow the bar to rise above a noisy room
@@ -380,11 +381,22 @@ const Motion = {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' }
       });
-      this.video = document.createElement('video');
-      this.video.srcObject = this.stream;
-      this.video.setAttribute('playsinline', '');
+      // The video element MUST be in the document. iOS Safari will not render
+      // frames from a detached <video>, which silently breaks detection.
+      this.video = document.getElementById('cam-preview');
+      if (!this.video) {
+        this.video = document.createElement('video');
+        this.video.id = 'cam-preview';
+        this.video.className = 'cam';
+        document.body.appendChild(this.video);
+      }
       this.video.muted = true;
+      this.video.setAttribute('playsinline', '');
+      this.video.setAttribute('autoplay', '');
+      this.video.playsInline = true;
+      this.video.srcObject = this.stream;
       await this.video.play().catch(() => {});
+
       this.canvas = document.createElement('canvas');
       this.canvas.width = this.CW; this.canvas.height = this.CH;
       this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
@@ -397,6 +409,9 @@ const Motion = {
       this.calRatios = [];
       this.calibrating = true;
       this.threshold = this.FLOOR;
+      this.waitingSince = 0;
+      this.calStart = 0;
+      this.noFrames = false;
       this.failed = false;
       this.running = true;
       this.raf = requestAnimationFrame((t) => this.loop(t));
@@ -421,7 +436,17 @@ const Motion = {
 
   sample(now) {
     const { CW, CH, BW, BH, ctx, video } = this;
-    if (!ctx || !video || video.readyState < 2) return;
+
+    // no picture yet — watch for one, and say so plainly if it never arrives
+    if (!ctx || !video || video.readyState < 2 || !video.videoWidth) {
+      if (!this.waitingSince) this.waitingSince = now;
+      if (now - this.waitingSince > 3000) this.noFrames = true;
+      return;
+    }
+    this.waitingSince = 0;
+    this.noFrames = false;
+    if (!this.calStart) this.calStart = now;
+
     ctx.drawImage(video, 0, 0, CW, CH);
     const d = ctx.getImageData(0, 0, CW, CH).data;
 
@@ -451,10 +476,16 @@ const Motion = {
 
       if (this.calibrating) {
         this.calRatios.push(ratio);
-        if (this.calRatios.length >= Math.round(this.CAL_MS / this.SAMPLE_MS)) {
-          const sorted = this.calRatios.slice().sort((a, b) => a - b);
-          const base = sorted[Math.floor(sorted.length * 0.3)] || 0;
-          this.threshold = Math.min(this.CEILING, Math.max(this.FLOOR, base * 4));
+        const enough = this.calRatios.length >= Math.round(this.CAL_MS / this.SAMPLE_MS);
+        const tooLong = this.calStart && (now - this.calStart) > 8000;
+        if (enough || tooLong) {
+          if (enough) {
+            const sorted = this.calRatios.slice().sort((a, b) => a - b);
+            const base = sorted[Math.floor(sorted.length * 0.3)] || 0;
+            this.threshold = Math.min(this.CEILING, Math.max(this.FLOOR, base * 4));
+          } else {
+            this.threshold = this.FLOOR;
+          }
           this.calibrating = false;
         }
         this.prevLum = lum;
@@ -477,6 +508,7 @@ const Motion = {
     if (this.raf) cancelAnimationFrame(this.raf);
     if (this.stream) this.stream.getTracks().forEach(t => t.stop());
     this.stream = null;
+    if (this.video) { try { this.video.srcObject = null; } catch (e) {} }
     this.video = null;
   }
 };
@@ -516,7 +548,12 @@ function sessionElapsed(now) {
     }
     if (Motion.calibrating) {
       $('motion-text').textContent = 'Reading the room…';
-      $('running-note').textContent = 'Stand still for a moment while the camera learns what still looks like.';
+      $('running-note').textContent = Motion.noFrames
+        ? 'The camera is not sending a picture. Close other apps using the camera, then start again.'
+        : 'Stand still for a moment while the camera learns what still looks like.';
+    } else if (Motion.noFrames) {
+      $('motion-text').textContent = 'No picture';
+      $('running-note').textContent = 'The camera is not sending a picture, so movement cannot be detected. Close other apps using the camera, then start again.';
     } else {
       $('motion-text').textContent = Motion.moving ? 'Moving' : 'Still';
       $('running-note').textContent = Motion.moving
