@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#7f88d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Stride">
+<title>Stride</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= TODAY ================= -->
+  <section id="screen-today" class="screen active">
+    <div class="pill" id="day-pill">Day 1</div>
+
+    <div class="card hero" id="today-idle">
+      <div class="big-time" id="session-time">1:00</div>
+      <div class="sub" id="session-sub">one move · repeat until the timer ends</div>
+      <ul class="moves" id="move-list"></ul>
+      <button id="btn-start" class="btn">Start</button>
+      <p class="note hidden" id="music-note"></p>
+      <p class="note" id="today-note"></p>
+    </div>
+
+    <div class="card hero hidden" id="today-running">
+      <div class="big-time" id="timer-display">1:00</div>
+      <div class="sub" id="running-sub"></div>
+
+      <div class="yt-wrap hidden" id="yt-wrap">
+        <div id="yt-embed"></div>
+        <p class="note">If the music hasn't started, tap play in the player.</p>
+      </div>
+
+      <ul class="moves" id="running-list"></ul>
+
+      <div class="motion hidden" id="motion-row">
+        <span class="dot" id="motion-dot"></span>
+        <span id="motion-text">Still</span>
+        <span class="meter"><i id="motion-meter"></i></span>
+      </div>
+
+      <button id="btn-done" class="btn">Done</button>
+      <p class="note" id="running-note"></p>
+    </div>
+
+    <div class="card hero hidden" id="today-complete">
+      <div class="big-time">90</div>
+      <div class="sub">days complete</div>
+      <h2 class="h2">You built it.</h2>
+      <p class="note">Ninety sessions, a minute at a time. That is how habits actually form.</p>
+    </div>
+  </section>
+
+  <!-- ================= PATH ================= -->
+  <section id="screen-journey" class="screen">
+    <div class="pill">Your path</div>
+
+    <div class="card flush">
+      <div class="art" id="scene"></div>
+      <div class="art-body">
+        <div class="step" id="step-line">Step 0 of 90</div>
+        <div class="forecast" id="forecast"></div>
+        <div class="stats">
+          <div><span class="n" id="stat-done">0</span><span class="l">done</span></div>
+          <div><span class="n" id="stat-missed">0</span><span class="l">missed</span></div>
+          <div><span class="n" id="stat-day">1</span><span class="l">day</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="note center">Finish today and you move into the green. Skip and you slip back to the red. One step at a time — never a reset.</p>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section id="screen-settings" class="screen">
+    <div class="pill">Settings</div>
+
+    <div class="card">
+      <h2 class="h2">Music</h2>
+      <div class="segmented" id="music-modes">
+        <button class="seg" data-mode="builtin">Stride</button>
+        <button class="seg" data-mode="none">None</button>
+        <button class="seg" data-mode="file">My file</button>
+        <button class="seg" data-mode="link">Link</button>
+      </div>
+      <p class="note" id="music-status"></p>
+
+      <div class="sub-block hidden" id="file-row">
+        <label class="filebtn">
+          <input type="file" id="file-input">
+          <span>Choose an audio file</span>
+        </label>
+        <p class="note" id="file-status"></p>
+      </div>
+
+      <div class="sub-block hidden" id="link-row">
+        <input type="text" id="link-input" placeholder="https://youtube.com/...">
+        <button id="btn-link-save" class="btn ghost">Save link</button>
+        <p class="note" id="link-status"></p>
+        <p class="note hidden" id="link-warn"></p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="h2">Motion</h2>
+      <div class="row">
+        <span class="row-label">Camera watches movement</span>
+        <label class="switch"><input type="checkbox" id="camera-toggle"><span class="slider"></span></label>
+      </div>
+      <p class="note">With this on, the music plays while you move — and the clock only runs while you move too. Video is analysed on your device and never leaves it.</p>
+    </div>
+
+    <div class="card">
+      <h2 class="h2">Reminder</h2>
+      <div class="row">
+        <input type="time" id="reminder-time">
+        <button id="btn-reminder-enable" class="btn ghost">Enable</button>
+      </div>
+      <p class="note" id="reminder-status"></p>
+    </div>
+
+    <div class="card">
+      <h2 class="h2">Progress</h2>
+      <p class="note">Saved on this device automatically. Use a backup code to carry it to another.</p>
+      <div class="row wrap">
+        <button id="btn-export" class="btn ghost">Copy backup code</button>
+        <button id="btn-import" class="btn ghost">Restore</button>
+      </div>
+      <p class="note" id="backup-status"></p>
+      <button id="btn-erase" class="btn danger">Erase everything</button>
+    </div>
+  </section>
+
+  <nav class="nav">
+    <button class="nav-btn active" data-screen="today">Today</button>
+    <button class="nav-btn" data-screen="journey">Path</button>
+    <button class="nav-btn" data-screen="settings">Settings</button>
+  </nav>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
